@@ -154,12 +154,12 @@ void mostrarTabela(const vector<Atividade>& atividades) {
              << a.folga << endl;
     }
 
-    cout << "\nCaminho crítico: ";
+    cout << "\nCaminho critico: ";
     bool primeiro = true;
     for (size_t j = 0; j < atividades.size(); j++) {
         auto& a = atividades[j];
         if (a.folga == 0) {
-            if (!primeiro) cout << " → ";
+            if (!primeiro) cout << " - ";
             cout << a.nome;
             primeiro = false;
         }
@@ -181,10 +181,10 @@ int main() {
         cin >> atividades[i].nome;
         indice[atividades[i].nome] = i;
 
-        cout << "Duração: ";
+        cout << "Duracao: ";
         cin >> atividades[i].duracao;
 
-        cout << "Precedentes (separados por vírgula, '-' se não houver): ";
+        cout << "Precedentes (separados por virgula, '-' se nao houver): ";
         string prec;
         cin >> prec;
 
