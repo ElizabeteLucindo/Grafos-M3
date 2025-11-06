@@ -11,11 +11,11 @@ struct Atividade {
     string nome;
     int duracao;
     vector<string> precedentes;
-    int ES = 0, EF = 0; //inicio/término mais cedo
-    int LS = 0, LF = 0, folga = 0; //inicio/termino mais tarde
+    int ES = 0, EF = 0; 
+    int LS = 0, LF = 0, folga = 0; 
 };
 
-// Função para gerar o HTML com o grafo
+
 void gerarHTML(const vector<Atividade>& atividades,
                const map<string, int>& indice,
                const string& nomeArquivo = "pertCPM.html") {
@@ -50,9 +50,13 @@ void gerarHTML(const vector<Atividade>& atividades,
         }else { color = "lightblue";}
 
         arq << "  { id: " << i << ", label: '"
-            << atividades[i].nome
-            << "\\nDur: " << atividades[i].duracao
-            << " | Folga: " << atividades[i].folga
+            << atividades[i].nome << "\\n"
+            << " Dur: " << atividades[i].duracao 
+            << " | Folga: " << atividades[i].folga << "\\n"
+            << " ES: " << atividades[i].ES 
+            << " | EF: " << atividades[i].EF << "\\n"
+            << " LS: " << atividades[i].LS 
+            << " | LF: " << atividades[i].LF
             << "', color: '" << color << "' }";
         if (i < atividades.size() - 1) arq << ",";
         arq << "\n";
@@ -82,10 +86,28 @@ void gerarHTML(const vector<Atividade>& atividades,
     var container = document.getElementById('mynetwork');
     var data = { nodes: nodes, edges: edges };
     var options = {
-        layout: { hierarchical: { direction: 'LR', sortMethod: 'directed' } },
-        edges: { smooth: false },
-        physics: false
+    layout: {
+        hierarchical: {
+            direction: 'LR',
+            levelSeparation: 150,
+            nodeSpacing: 150,
+            treeSpacing: 200,
+            sortMethod: 'directed'
+        }
+    },
+    nodes: {
+        shape: 'box',
+        margin: 10,
+        widthConstraint: { maximum: 120 },
+        font: { size: 12, multi: 'html', align: 'center' }
+    },
+    edges: {
+        smooth: false,
+        arrows: { to: { enabled: true, scaleFactor: 0.8 } }
+    },
+    physics: false
     };
+
     var network = new vis.Network(container, data, options);
     </script>
     </body>
@@ -167,6 +189,15 @@ void mostrarTabela(const vector<Atividade>& atividades) {
     cout << endl;
 }
 
+void exibirMenu() {
+    cout << "\nMENU:" << endl;
+    cout << "1 - Mostrar matriz " << endl;
+    cout << "2 - Mostrar grafo" << endl;
+    cout << "0 - Sair" << endl;
+    cout << "Escolha uma opção: ";
+}
+
+
 int main() {
     int qtd;
     cout << "Quantas atividades? ";
@@ -185,11 +216,11 @@ int main() {
         cin >> atividades[i].duracao;
 
         cout << "Precedentes (separados por virgula, '-' se nao houver): ";
-        string prec;
-        cin >> prec;
+        string precedente;
+        cin >> precedente;
 
-        if (prec != "-") {
-            stringstream ss(prec);
+        if (precedente != "-") {
+            stringstream ss(precedente);
             string token;
             while (getline(ss, token, ',')) {
                 atividades[i].precedentes.push_back(token);
@@ -197,15 +228,27 @@ int main() {
         }
     }
 
+
     calcularPERT(atividades, indice);
-    mostrarTabela(atividades);
+    int opcao;
+    do{
+        exibirMenu();
+        cin >> opcao;
 
-    char op;
-    cout << "\nDeseja gerar o grafo visual? (s/n): ";
-    cin >> op;
-    if (op == 's' || op == 'S')
-        gerarHTML(atividades, indice);
+        switch(opcao){
+            case 1:{
+                mostrarTabela(atividades);
+                break;
+            }
+            case 2:{
+                gerarHTML(atividades, indice);
+                break;
+            }
 
-    cout << "\nPrograma finalizado.\n";
+            default:
+                cout << "Opcao invalida!" << endl;
+        }
+    }while(opcao != 0);
+    
     return 0;
 }
