@@ -7,15 +7,16 @@
 #include <algorithm>
 using namespace std;
 
+// Estrutura para armazenar dados de cada atividade
 struct Atividade {
     string nome;
     int duracao;
     vector<string> precedentes;
-    int ES = 0, EF = 0; 
-    int LS = 0, LF = 0, folga = 0; 
+    int ES = 0, EF = 0;
+    int LS = 0, LF = 0, folga = 0;
 };
 
-
+// Gera o grafo em HTML
 void gerarHTML(const vector<Atividade>& atividades,
                const map<string, int>& indice,
                const string& nomeArquivo = "pertCPM.html") {
@@ -25,13 +26,14 @@ void gerarHTML(const vector<Atividade>& atividades,
         return;
     }
 
+    // Cabeçalho do HTML
     arq << R"(
     <!DOCTYPE html>
     <html>
     <head>
     <meta charset="utf-8">
     <title>Grafo PERT/CPM</title>
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         #mynetwork { width: 100%; height: 600px; border: 1px solid gray; }
     </style>
@@ -43,22 +45,29 @@ void gerarHTML(const vector<Atividade>& atividades,
     var nodes = new vis.DataSet([
     )";
 
+    // Marca em vermelho as atividades do caminho crítico
     for (size_t i = 0; i < atividades.size(); i++) {
-        string color;
-        if (atividades[i].folga == 0){
-            color = "red";
-        }else { color = "lightblue";}
+        string color = (atividades[i].folga == 0) ? "red" : "lightblue";
 
-        arq << "  { id: " << i << ", label: '"
-            << atividades[i].nome << "\\n"
-            << " Dur: " << atividades[i].duracao 
-            << " | Folga: " << atividades[i].folga << "\\n"
-            << " ES: " << atividades[i].ES 
-            << " | EF: " << atividades[i].EF << "\\n"
-            << " LS: " << atividades[i].LS 
-            << " | LF: " << atividades[i].LF
-            << "', color: '" << color << "' }";
+        arq << "  { id: " << i
+            << ", label: '" << atividades[i].nome
+            << "', color: '" << color
+            << "', shape: 'circle' }";
+
         if (i < atividades.size() - 1) arq << ",";
+        arq << "\n";
+    }
+
+    // Adiciona nós de informação
+    for (size_t i = 0; i < atividades.size(); i++) {
+        arq << ",  { id: 'info" << i << "', label: '"
+            << "Dur: " << atividades[i].duracao
+            << " | Folga: " << atividades[i].folga << "\\n"
+            << "ES: " << atividades[i].ES
+            << " | EF: " << atividades[i].EF << "\\n"
+            << "LS: " << atividades[i].LS
+            << " | LF: " << atividades[i].LF
+            << "', shape: 'box', color: '#fff8dc' }";
         arq << "\n";
     }
 
@@ -68,9 +77,9 @@ void gerarHTML(const vector<Atividade>& atividades,
     )";
 
     bool primeiro = true;
+    // Cria conexões entre atividades
     for (size_t i = 0; i < atividades.size(); i++) {
-        for (size_t j = 0; j < atividades[i].precedentes.size(); j++) {
-            string p = atividades[i].precedentes[j];
+        for (auto& p : atividades[i].precedentes) {
             if (indice.count(p)) {
                 if (!primeiro) arq << ",\n";
                 primeiro = false;
@@ -81,31 +90,40 @@ void gerarHTML(const vector<Atividade>& atividades,
         }
     }
 
+    // Conecta cada atividade ao seu nó de informação
+    for (size_t i = 0; i < atividades.size(); i++) {
+        if (!primeiro) arq << ",\n";
+        primeiro = false;
+        arq << "  { from: " << i
+            << ", to: 'info" << i
+            << "', dashes: true, color: 'gray', arrows: '' }";
+    }
+
+    // Configuração visual do grafo
     arq << R"(]);
 
     var container = document.getElementById('mynetwork');
     var data = { nodes: nodes, edges: edges };
     var options = {
-    layout: {
+      layout: {
         hierarchical: {
-            direction: 'LR',
-            levelSeparation: 150,
-            nodeSpacing: 150,
-            treeSpacing: 200,
-            sortMethod: 'directed'
+          direction: 'LR',
+          levelSeparation: 150,
+          nodeSpacing: 150,
+          treeSpacing: 200,
+          sortMethod: 'directed'
         }
-    },
-    nodes: {
-        shape: 'box',
-        margin: 10,
-        widthConstraint: { maximum: 120 },
+      },
+      nodes: {
+        margin: 8,
         font: { size: 12, multi: 'html', align: 'center' }
-    },
-    edges: {
+      },
+      edges: {
         smooth: false,
         arrows: { to: { enabled: true, scaleFactor: 0.8 } }
-    },
-    physics: false
+      },
+      physics: false,
+      interaction: { dragNodes: true } // permite arrastar nós manualmente
     };
 
     var network = new vis.Network(container, data, options);
@@ -116,6 +134,7 @@ void gerarHTML(const vector<Atividade>& atividades,
 
     arq.close();
     cout << "\nArquivo '" << nomeArquivo << "' gerado! Abra-o no navegador.\n";
+
 #ifdef _WIN32
     system(("start " + nomeArquivo).c_str());
 #else
@@ -123,16 +142,15 @@ void gerarHTML(const vector<Atividade>& atividades,
 #endif
 }
 
-
+// Calcula tempos e folgas
 void calcularPERT(vector<Atividade>& atividades, map<string, int>& indice) {
     
-    // Caminho de ida
+    // Cálculo do caminho direto
     for (size_t i = 0; i < atividades.size(); i++) {
         int maiorEF = 0;
-        for (size_t j = 0; j < atividades[i].precedentes.size(); j++) {
-            string p = atividades[i].precedentes[j];
+        for (auto& p : atividades[i].precedentes) {
             if (indice.count(p)) {
-                int idx= indice[p];
+                int idx = indice[p];
                 maiorEF = max(maiorEF, atividades[idx].EF);
             }
         }
@@ -140,46 +158,43 @@ void calcularPERT(vector<Atividade>& atividades, map<string, int>& indice) {
         atividades[i].EF = atividades[i].ES + atividades[i].duracao;
     }
 
-    // Tempo total
+    // Determina o tempo total do projeto
     int tempoFinal = 0;
-    for (size_t i = 0; i < atividades.size(); i++)
-        tempoFinal = max(tempoFinal, atividades[i].EF);
+    for (auto& a : atividades)
+        tempoFinal = max(tempoFinal, a.EF);
 
-    // Caminho de volta 
+    // Cálculo do caminho de retorno
     for (int i = (int)atividades.size() - 1; i >= 0; i--) {
         int menorLS = tempoFinal;
         for (size_t j = 0; j < atividades.size(); j++) {
-            for (size_t k = 0; k < atividades[j].precedentes.size(); k++) {
-            string p = atividades[j].precedentes[k];
+            for (auto& p : atividades[j].precedentes) {
                 if (p == atividades[i].nome) {
                     menorLS = min(menorLS, atividades[j].LS);
                 }
             }
         }
-
         atividades[i].LF = menorLS;
         atividades[i].LS = atividades[i].LF - atividades[i].duracao;
         atividades[i].folga = atividades[i].LS - atividades[i].ES;
     }
 }
 
-// Mostra tabela no console
+// Exibe tabela com resultados no console
 void mostrarTabela(const vector<Atividade>& atividades) {
     cout << "\n=== TABELA PERT/CPM ===\n";
     cout << "Atividade\tDuracao\t\tES\tEF\tLS\tLF\tFolga\n";
     cout << "------------------------------------------------------------------------\n";
-    for (size_t i = 0; i < atividades.size(); i++) {
-        auto& a = atividades[i];
+    for (auto& a : atividades) {
         cout << a.nome << "\t\t" << a.duracao << "\t\t"
              << a.ES << "\t" << a.EF << "\t"
              << a.LS << "\t" << a.LF << "\t"
              << a.folga << endl;
     }
 
+    // Mostra o caminho crítico
     cout << "\nCaminho critico: ";
     bool primeiro = true;
-    for (size_t j = 0; j < atividades.size(); j++) {
-        auto& a = atividades[j];
+    for (auto& a : atividades) {
         if (a.folga == 0) {
             if (!primeiro) cout << " - ";
             cout << a.nome;
@@ -190,13 +205,12 @@ void mostrarTabela(const vector<Atividade>& atividades) {
 }
 
 void exibirMenu() {
-    cout << "\nMENU:" << endl;
-    cout << "1 - Mostrar matriz " << endl;
-    cout << "2 - Mostrar grafo" << endl;
-    cout << "0 - Sair" << endl;
+    cout << "\nMENU:\n";
+    cout << "1 - Mostrar matriz\n";
+    cout << "2 - Mostrar grafo\n";
+    cout << "0 - Sair\n";
     cout << "Escolha uma opção: ";
 }
-
 
 int main() {
     int qtd;
@@ -216,39 +230,86 @@ int main() {
         cin >> atividades[i].duracao;
 
         cout << "Precedentes (separados por virgula, '-' se nao houver): ";
-        string precedente;
-        cin >> precedente;
 
-        if (precedente != "-") {
-            stringstream ss(precedente);
+        // Validação dos precedentes
+        string entrada;
+        while (true) {
+            cin >> entrada;
+
+            // Verifica caracteres válidos
+            bool valido = true;
+            for (char c : entrada) {
+                if (!isalnum(c) && c != ',' && c != '-') {
+                    valido = false;
+                    break;
+                }
+            }
+
+            if (!valido) {
+                cout << "Entrada invalida! Use apenas numeros, virgulas ou '-'.\n";
+                cout << "Digite novamente os precedentes: ";
+                continue;
+            }
+
+            if (entrada == "-") {
+                atividades[i].precedentes.clear();
+                break;
+            }
+
+            // Separa e valida precedentes existentes
+            stringstream ss(entrada);
             string token;
+            valido = true;
+            vector<string> lista;
+
             while (getline(ss, token, ',')) {
-                atividades[i].precedentes.push_back(token);
+                token.erase(remove_if(token.begin(), token.end(), ::isspace), token.end());
+
+                if (token.empty()) {
+                    cout << "Entrada invalida: virgula extra.\n";
+                    valido = false;
+                    break;
+                }
+
+                if (!indice.count(token)) {
+                    cout << "Precedente '" << token << "' nao existe. Digite somente atividades anteriores.\n";
+                    valido = false;
+                    break;
+                }
+
+                lista.push_back(token);
+            }
+
+            if (valido) {
+                atividades[i].precedentes = lista;
+                break;  
             }
         }
     }
 
-
     calcularPERT(atividades, indice);
+
     int opcao;
-    do{
+    do {
         exibirMenu();
         cin >> opcao;
 
-        switch(opcao){
-            case 1:{
+        switch(opcao) {
+            case 1:
                 mostrarTabela(atividades);
                 break;
-            }
-            case 2:{
+            case 2:
                 gerarHTML(atividades, indice);
                 break;
-            }
-
+            case 0:
+                cout << "Saindo...\n";
+                break;
             default:
-                cout << "Opcao invalida!" << endl;
+                cout << "Opcao invalida!\n";
+                break;
         }
-    }while(opcao != 0);
-    
+
+    } while(opcao != 0);
+
     return 0;
 }

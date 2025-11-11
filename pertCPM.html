@@ -4,7 +4,7 @@
     <head>
     <meta charset="utf-8">
     <title>Grafo PERT/CPM</title>
-    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         #mynetwork { width: 100%; height: 600px; border: 1px solid gray; }
     </style>
@@ -14,45 +14,56 @@
     <div id="mynetwork"></div>
     <script>
     var nodes = new vis.DataSet([
-      { id: 0, label: '1\n Dur: 10 | Folga: 0\n ES: 0 | EF: 10\n LS: 0 | LF: 10', color: 'red' },
-  { id: 1, label: '2\n Dur: 4 | Folga: 8\n ES: 10 | EF: 14\n LS: 18 | LF: 22', color: 'lightblue' },
-  { id: 2, label: '3\n Dur: 7 | Folga: 0\n ES: 10 | EF: 17\n LS: 10 | LF: 17', color: 'red' },
-  { id: 3, label: '4\n Dur: 5 | Folga: 0\n ES: 17 | EF: 22\n LS: 17 | LF: 22', color: 'red' },
-  { id: 4, label: '5\n Dur: 5 | Folga: 0\n ES: 22 | EF: 27\n LS: 22 | LF: 27', color: 'red' },
-  { id: 5, label: '6\n Dur: 2 | Folga: 8\n ES: 17 | EF: 19\n LS: 25 | LF: 27', color: 'lightblue' }
+      { id: 0, label: '1', color: 'red', shape: 'circle' },
+  { id: 1, label: '2', color: 'red', shape: 'circle' },
+  { id: 2, label: '3', color: 'red', shape: 'circle' },
+  { id: 3, label: '4', color: 'red', shape: 'circle' },
+  { id: 4, label: '5', color: 'red', shape: 'circle' },
+  { id: 5, label: '6', color: 'red', shape: 'circle' }
+,  { id: 'info0', label: 'Dur: 10 | Folga: 0\nES: 0 | EF: 10\nLS: 0 | LF: 10', shape: 'box', color: '#fff8dc' }
+,  { id: 'info1', label: 'Dur: 2 | Folga: 0\nES: 10 | EF: 12\nLS: 10 | LF: 12', shape: 'box', color: '#fff8dc' }
+,  { id: 'info2', label: 'Dur: 1 | Folga: 0\nES: 12 | EF: 13\nLS: 12 | LF: 13', shape: 'box', color: '#fff8dc' }
+,  { id: 'info3', label: 'Dur: 6 | Folga: 0\nES: 13 | EF: 19\nLS: 13 | LF: 19', shape: 'box', color: '#fff8dc' }
+,  { id: 'info4', label: 'Dur: 4 | Folga: 0\nES: 12 | EF: 16\nLS: 12 | LF: 16', shape: 'box', color: '#fff8dc' }
+,  { id: 'info5', label: 'Dur: 3 | Folga: 0\nES: 16 | EF: 19\nLS: 16 | LF: 19', shape: 'box', color: '#fff8dc' }
 ]);
 
     var edges = new vis.DataSet([
       { from: 0, to: 1, arrows: 'to', color: 'black' },
-  { from: 0, to: 2, arrows: 'to', color: 'black' },
+  { from: 1, to: 2, arrows: 'to', color: 'black' },
   { from: 2, to: 3, arrows: 'to', color: 'black' },
+  { from: 0, to: 4, arrows: 'to', color: 'black' },
   { from: 1, to: 4, arrows: 'to', color: 'black' },
-  { from: 3, to: 4, arrows: 'to', color: 'black' },
-  { from: 2, to: 5, arrows: 'to', color: 'black' }]);
+  { from: 4, to: 5, arrows: 'to', color: 'black' },
+  { from: 0, to: 'info0', dashes: true, color: 'gray', arrows: '' },
+  { from: 1, to: 'info1', dashes: true, color: 'gray', arrows: '' },
+  { from: 2, to: 'info2', dashes: true, color: 'gray', arrows: '' },
+  { from: 3, to: 'info3', dashes: true, color: 'gray', arrows: '' },
+  { from: 4, to: 'info4', dashes: true, color: 'gray', arrows: '' },
+  { from: 5, to: 'info5', dashes: true, color: 'gray', arrows: '' }]);
 
     var container = document.getElementById('mynetwork');
     var data = { nodes: nodes, edges: edges };
     var options = {
-    layout: {
+      layout: {
         hierarchical: {
-            direction: 'LR',
-            levelSeparation: 150,
-            nodeSpacing: 150,
-            treeSpacing: 200,
-            sortMethod: 'directed'
+          direction: 'LR',
+          levelSeparation: 150,
+          nodeSpacing: 150,
+          treeSpacing: 200,
+          sortMethod: 'directed'
         }
-    },
-    nodes: {
-        shape: 'box',
-        margin: 10,
-        widthConstraint: { maximum: 120 },
+      },
+      nodes: {
+        margin: 8,
         font: { size: 12, multi: 'html', align: 'center' }
-    },
-    edges: {
+      },
+      edges: {
         smooth: false,
         arrows: { to: { enabled: true, scaleFactor: 0.8 } }
-    },
-    physics: false
+      },
+      physics: false,
+      interaction: { dragNodes: true } // permite arrastar nós manualmente
     };
 
     var network = new vis.Network(container, data, options);
